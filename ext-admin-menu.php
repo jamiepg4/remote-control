@@ -12,46 +12,186 @@
  * @package         Ext_Admin_Menu
  */
 
+class Ext_Admin_Menu {
 
-function ext_admin_menu_endpoint() {
+	private static $instance;
 
-	add_rewrite_tag( '%ext_admin_menu%', '([^&]+)' );
-	add_rewrite_rule( 'ext_admin_menu/html/?', "index.php?ext_admin_menu=true", 'top' );
+	/**
+	 * Prevent the creation of a new instance of the "SINGLETON" using the
+	 * 'new' operator from outside of this class.
+	 **/
+	protected function __construct(){}
 
-}
-add_action( 'init', 'ext_admin_menu_endpoint' );
+	/**
+	 * Prevent cloning the instance of the "SINGLETON" instance.
+	 * @return void
+	 **/
+	private function __clone(){}
 
-function ext_admin_menu_data() {
+	/**
+	 * Prevent the unserialization of the "SINGLETON" instance.
+	 * @return void
+	 **/
+	private function __wakeup(){}
 
-	global $wp_query;
-
-	$show = $wp_query->get( 'ext_admin_menu' );
-
-	if ( ! $show ) {
-		return;
+	public static function get_instance() {
+		if ( ! isset( self::$instance ) ) {
+			self::$instance = new Ext_Admin_Menu();
+			self::$instance->setup_actions();
+		}
+		return self::$instance;
 	}
 
-	ob_start();
-	wp_admin_bar_render();
-	$header = ob_get_clean();
+	private function setup_actions() {
+		add_action( 'init', array( $this, 'action_init_register_rewrites' ) );
+		add_action( 'template_redirect', array( $this, 'action_template_redirect' ) );
 
-	$content_type = 'application/json';
-	$json_response = json_encode( array( 'html' => $header ) );
+	}
 
-	$callback = 'jsonmenu';
+	/**
+	 * Register the custom rewrite rules
+	 */
+	public function action_init_register_rewrites() {
+		add_rewrite_tag( '%extam_show%', '([^&]+)' );
+		add_rewrite_tag( '%extam_type%', '([^&]+)' );
+		add_rewrite_tag( '%extam_id%', '([^&]+)' );
+		add_rewrite_rule( 'ext_admin_menu/(full|lite)/?', 'index.php?extam_show=$matches[1]', 'top' );
+		add_rewrite_rule( 'ext_admin_menu/edit/(post|page|tag)/([0-9]+)/?', 'index.php?extam_show=edit&extam_type=$matches[1]&extam_id=$matches[2]', 'top' );
 
-// JSONP callback support
-	if ( null !== $callback ) {
+	}
+
+	/**
+	 * Sends the requests to a specific function (controller)
+	 *
+	 * @return void
+	 */
+	public function action_template_redirect() {
+
+		global $wp_query;
+
+		switch ( $wp_query->get( 'extam_show' ) ) {
+			case 'full':
+				$this->get_full();
+				break;
+			case 'lite':
+				$this->get_lite();
+				break;
+			case 'edit':
+				$this->get_edit( $wp_query->get( 'extam_type' ), $wp_query->get( 'extam_id' ));
+				break;
+		}
+
+	}
+
+	/**
+	 * For displaying the full admin menu with all additional menu items based on user's role
+	 */
+	public function get_full() {
+
+		ob_start();
+		wp_admin_bar_render();
+		$header = ob_get_clean();
+
+		$json_response = json_encode( array( 'html' => $header ) );
+
+		$callback = 'jsonmenu';
+
+		$this->jsonp( $callback, $json_response ); // exits with output
+
+	}
+
+	/**
+	 * Displays a reduced set of menu items
+	 *
+	 * @return void
+	 */
+	public function get_lite() {
+
+		global $wp_admin_bar;
+
+		// Loads a lite version of the menu manually
+		wp_admin_bar_wp_menu( $wp_admin_bar );
+		wp_admin_bar_my_account_menu( $wp_admin_bar );
+		wp_admin_bar_site_menu( $wp_admin_bar );
+		wp_admin_bar_my_account_item ($wp_admin_bar );
+		wp_admin_bar_new_content_menu( $wp_admin_bar );
+		wp_admin_bar_edit_menu( $wp_admin_bar );
+		wp_admin_bar_add_secondary_groups( $wp_admin_bar );
+
+		ob_start();
+		$wp_admin_bar->render();
+		$header = ob_get_clean();
+
+		$json_response = json_encode( array( 'html' => $header ) );
+
+		$callback = 'jsonmenu';
+
+		$this->jsonp( $callback, $json_response ); // exits with output
+
+	}
+
+	/**
+	 * Displays the lite version of the menu along with overridden edit links based on what is passed
+	 *
+	 * @param string $type The type of query to be used
+	 * @param int $id The ID of the page the user is on
+	 * @return void
+	 */
+	public function get_edit( $type, $id) {
+
+		global $wp_admin_bar, $wp_the_query;
+
+		if ( $type == 'post' && is_numeric( $id ) ) {
+			$wp_query = new WP_Query( array(
+				'p'           => $id,
+				'post_status' => 'publish',
+			) );
+		}
+
+		$wp_the_query = $wp_query;
+
+		// Loads a lighter version of the menu manually
+		wp_admin_bar_wp_menu( $wp_admin_bar );
+		wp_admin_bar_my_account_menu( $wp_admin_bar );
+		wp_admin_bar_site_menu( $wp_admin_bar );
+		wp_admin_bar_my_account_item ($wp_admin_bar );
+		wp_admin_bar_new_content_menu( $wp_admin_bar );
+		wp_admin_bar_edit_menu( $wp_admin_bar );
+		wp_admin_bar_add_secondary_groups( $wp_admin_bar );
+
+		ob_start();
+		$wp_admin_bar->render();
+		$header = ob_get_clean();
+
+		$json_response = json_encode( array( 'html' => $header ) );
+
+		$callback = 'jsonmenu';
+
+		$this->jsonp( $callback, $json_response ); // exits with output
+
+	}
+
+	// JSONP callback support
+	/**
+	 * JSONP callback support
+	 *
+	 * @param string $callback The callback function
+	 * @param string $json_response the json encoded response string
+	 * @return void
+	 */
+	private function jsonp( $callback, $json_response ) {
 		// JSONP requires content type of application/javascript
 		$content_type = 'application/javascript';
 
 		// JSONP uses callback for response
 		$json_response = esc_js( $callback ) . '(' . $json_response . ')';
+
+		@header( 'Content-Type: ' . $content_type . '; charset=' . get_option( 'blog_charset' ) );
+		echo $json_response;
+
+		exit();
 	}
-
-	@header( 'Content-Type: ' . $content_type . '; charset=' . get_option( 'blog_charset' ) );
-	echo $json_response;
-
-	exit();
 }
-add_action( 'template_redirect', 'ext_admin_menu_data' );
+
+// Registers the class on loading file
+Ext_Admin_Menu::get_instance();
