@@ -5,14 +5,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel='stylesheet' id='dashicons-css'  href='/wp-includes/css/dashicons.min.css?ver=4.5.1' type='text/css' media='all' />
     <link rel='stylesheet' id='admin-bar-css'  href='/wp-includes/css/admin-bar.min.css?ver=4.5.1' type='text/css' media='all' />
-    <link rel='stylesheet' id='fusion-css'  href='/wp-content/themes/fusion-theme/assets/css/theme.css?ver=4.5.1' type='text/css' media='all' />
     <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
 </head>
 <body>
 
 <script>
+    function getParameterByName(name, url) {
+        if (!url) url = window.location.href;
+        name = name.replace(/[\[\]]/g, "\\$&");
+        var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"), results = regex.exec(url);
+        if (!results) return null;
+        if (!results[2]) return '';
+        return decodeURIComponent(results[2].replace(/\+/g, " "));
+    }
+    var adminDomain = getParameterByName('domain'); // Enter this for quick testing on a separate domain
+    var type = getParameterByName('type');
+    var id = getParameterByName('id');
+
+    var jsonmenu = function jsonmenu(json) {
+        if ($('#wpadminwrapper').html()) {
+            $('#wpadminwrapper').html(json.html);
+        } else {
+            $('body').prepend( '<div id="wpadminwrapper"></div>' );
+            $('#wpadminwrapper').html(json.html);
+        }
+    };
+
+    var pagechanged = function pagechanged() {
+        var menuJSON = adminDomain + "/ext_admin_menu/edit/" + type + "/" + id + "/";
+        $.ajax({
+            url: menuJSON,
+            dataType: "jsonp",
+            jsonpCallback: "jsonmenu"
+        });
+
+    };
+
     (function() {
-        var menuJSON = "/ext_admin_menu/html/?post=288230&jsoncallback=?";
+        var menuJSON = adminDomain + "/ext_admin_menu/lite/";
         $.ajax({
             url: menuJSON,
             dataType: "jsonp",
@@ -20,13 +50,13 @@
         });
 
     })();
-
-    function jsonmenu(json) {
-        $('body').append(json.html);
-
-    }
 </script>
 
 </body>
+<br />
+<br />
+<br />
+<br />
+<a href="#link1" onclick="pagechanged();" >watch the admin menu update</a>
 </html>
 
