@@ -69,7 +69,15 @@ class Ext_Admin_Menu {
 
 		global $wp_query;
 
+		// Do not return a menu if user is not logged in
+		if ( !is_user_logged_in() ) {
+			$this->get_empty(); // exits without output
+		}
+
 		switch ( $wp_query->get( 'extam_show' ) ) {
+			case 'empty':
+				$this->get_empty();
+				break;
 			case 'full':
 				$this->get_full();
 				break;
@@ -80,6 +88,19 @@ class Ext_Admin_Menu {
 				$this->get_edit( $wp_query->get( 'extam_type' ), $wp_query->get( 'extam_id' ));
 				break;
 		}
+
+	}
+
+	/**
+	 * Returns an empty html value for the admin menu
+	 */
+	public function get_empty() {
+
+		$json_response = json_encode( array( 'html' => '' ) );
+
+		$callback = 'jsonmenu';
+
+		$this->jsonp( $callback, $json_response ); // exits with output
 
 	}
 
