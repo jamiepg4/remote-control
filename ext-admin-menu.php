@@ -98,9 +98,7 @@ class Ext_Admin_Menu {
 
 		$json_response = json_encode( array( 'html' => '' ) );
 
-		$callback = 'jsonmenu';
-
-		$this->jsonp( $callback, $json_response ); // exits with output
+		$this->jsonp( $json_response ); // exits with output
 
 	}
 
@@ -115,9 +113,7 @@ class Ext_Admin_Menu {
 
 		$json_response = json_encode( array( 'html' => $header ) );
 
-		$callback = 'jsonmenu';
-
-		$this->jsonp( $callback, $json_response ); // exits with output
+		$this->jsonp( $json_response ); // exits with output
 
 	}
 
@@ -145,9 +141,7 @@ class Ext_Admin_Menu {
 
 		$json_response = json_encode( array( 'html' => $header ) );
 
-		$callback = 'jsonmenu';
-
-		$this->jsonp( $callback, $json_response ); // exits with output
+		$this->jsonp( $json_response ); // exits with output
 
 	}
 
@@ -186,9 +180,7 @@ class Ext_Admin_Menu {
 
 		$json_response = json_encode( array( 'html' => $header ) );
 
-		$callback = 'jsonmenu';
-
-		$this->jsonp( $callback, $json_response ); // exits with output
+		$this->jsonp( $json_response ); // exits with output
 
 	}
 
@@ -196,11 +188,13 @@ class Ext_Admin_Menu {
 	/**
 	 * JSONP callback support
 	 *
-	 * @param string $callback The callback function
 	 * @param string $json_response the json encoded response string
 	 * @return void
 	 */
-	private function jsonp( $callback, $json_response ) {
+	private function jsonp( $json_response ) {
+
+		$callback = preg_replace("/[^a-zA-Z0-9]+/", "", $_GET['callback']); // alphanumeric only
+
 		// JSONP requires content type of application/javascript
 		$content_type = 'application/javascript';
 
