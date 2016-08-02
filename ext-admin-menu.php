@@ -91,6 +91,15 @@ class Ext_Admin_Menu {
 
 	}
 
+	private function get_css() {
+		global $wp_version;
+		$css = "<link rel='stylesheet' id='dashicons-css' href='" . get_site_url() .
+		       "/wp-includes/css/dashicons.min.css?ver=" . $wp_version . "' type='text/css' media='all' />";
+		$css .= "<link rel='stylesheet' id='admin-bar-css' href='" . get_site_url() .
+		        "/wp-includes/css/admin-bar.min.css?ver=" . $wp_version . "' type='text/css' media='all' />";
+
+		return $css;
+	}
 	/**
 	 * Returns an empty html value for the admin menu
 	 */
@@ -109,7 +118,10 @@ class Ext_Admin_Menu {
 
 		ob_start();
 		wp_admin_bar_render();
-		$header = ob_get_clean();
+		$header = $this->get_css();
+		$header .= "<div id=\"wpadminwrapper\">";
+		$header .= ob_get_clean();
+		$header .= "</div>";
 
 		$json_response = json_encode( array( 'html' => $header ) );
 
@@ -137,7 +149,10 @@ class Ext_Admin_Menu {
 
 		ob_start();
 		$wp_admin_bar->render();
-		$header = ob_get_clean();
+		$header = $this->get_css();
+		$header .= "<div id=\"wpadminwrapper\">";
+		$header .= ob_get_clean();
+		$header .= "</div>";
 
 		$json_response = json_encode( array( 'html' => $header ) );
 

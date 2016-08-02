@@ -3,8 +3,6 @@
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel='stylesheet' id='dashicons-css'  href='/wp-includes/css/dashicons.min.css?ver=4.5.1' type='text/css' media='all' />
-    <link rel='stylesheet' id='admin-bar-css'  href='/wp-includes/css/admin-bar.min.css?ver=4.5.1' type='text/css' media='all' />
     <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
 </head>
 <body>
@@ -22,23 +20,14 @@
     var type = getParameterByName('type');
     var id = getParameterByName('id');
 
+    window.pageChanged = null;
+
     var jsonmenu = function jsonmenu(json) {
-        if ($('#wpadminwrapper').html()) {
-            $('#wpadminwrapper').html(json.html);
+        if (window.pageChanged == null) {
+            $('body').prepend(json.html);
         } else {
-            $('body').prepend( '<div id="wpadminwrapper"></div>' );
             $('#wpadminwrapper').html(json.html);
         }
-    };
-
-    var pagechanged = function pagechanged() {
-        var menuJSON = adminDomain + "/ext_admin_menu/edit/" + type + "/" + id + "/";
-        $.ajax({
-            url: menuJSON,
-            dataType: "jsonp",
-            jsonpCallback: "jsonmenu"
-        });
-
     };
 
     (function() {
@@ -47,8 +36,17 @@
             url: menuJSON,
             dataType: "jsonp",
             jsonpCallback: "jsonmenu"
-        });
-
+        })
+            .done(function(data) {
+                window.pageChanged = function pageChanged() {
+                    var menuJSON = adminDomain + "/ext_admin_menu/edit/" + type + "/" + id + "/";
+                    $.ajax({
+                        url: menuJSON,
+                        dataType: "jsonp",
+                        jsonpCallback: "jsonmenu"
+                    });
+                };
+            });
     })();
 </script>
 
@@ -57,6 +55,6 @@
 <br />
 <br />
 <br />
-<a href="#link1" onclick="pagechanged();" >watch the admin menu update</a>
+<a href="#link1" onclick="pageChanged();" >watch the admin menu update</a>
 </html>
 
