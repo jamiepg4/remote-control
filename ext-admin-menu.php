@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Plugin Name:     External Admin Menu
  * Plugin URI:      https://github.com/ndevrinc/ext-admin-menu
@@ -11,7 +12,6 @@
  *
  * @package         Ext_Admin_Menu
  */
-
 class Ext_Admin_Menu {
 
 	private static $instance;
@@ -20,25 +20,29 @@ class Ext_Admin_Menu {
 	 * Prevent the creation of a new instance of the "SINGLETON" using the
 	 * 'new' operator from outside of this class.
 	 **/
-	protected function __construct(){}
+	protected function __construct() {
+	}
 
 	/**
 	 * Prevent cloning the instance of the "SINGLETON" instance.
 	 * @return void
 	 **/
-	private function __clone(){}
+	private function __clone() {
+	}
 
 	/**
 	 * Prevent the unserialization of the "SINGLETON" instance.
 	 * @return void
 	 **/
-	private function __wakeup(){}
+	private function __wakeup() {
+	}
 
 	public static function get_instance() {
 		if ( ! isset( self::$instance ) ) {
 			self::$instance = new Ext_Admin_Menu();
 			self::$instance->setup_actions();
 		}
+
 		return self::$instance;
 	}
 
@@ -70,7 +74,7 @@ class Ext_Admin_Menu {
 		global $wp_query;
 
 		// Do not return a menu if user is not logged in
-		if ( !is_user_logged_in() ) {
+		if ( ! is_user_logged_in() ) {
 			$this->get_empty(); // exits without output
 		}
 
@@ -85,7 +89,7 @@ class Ext_Admin_Menu {
 				$this->get_lite();
 				break;
 			case 'edit':
-				$this->get_edit( $wp_query->get( 'extam_type' ), $wp_query->get( 'extam_id' ));
+				$this->get_edit( $wp_query->get( 'extam_type' ), $wp_query->get( 'extam_id' ) );
 				break;
 		}
 
@@ -100,6 +104,7 @@ class Ext_Admin_Menu {
 
 		return $css;
 	}
+
 	/**
 	 * Returns an empty html value for the admin menu
 	 */
@@ -142,7 +147,7 @@ class Ext_Admin_Menu {
 		wp_admin_bar_wp_menu( $wp_admin_bar );
 		wp_admin_bar_my_account_menu( $wp_admin_bar );
 		wp_admin_bar_site_menu( $wp_admin_bar );
-		wp_admin_bar_my_account_item ($wp_admin_bar );
+		wp_admin_bar_my_account_item( $wp_admin_bar );
 		wp_admin_bar_new_content_menu( $wp_admin_bar );
 		wp_admin_bar_edit_menu( $wp_admin_bar );
 		wp_admin_bar_add_secondary_groups( $wp_admin_bar );
@@ -165,26 +170,44 @@ class Ext_Admin_Menu {
 	 *
 	 * @param string $type The type of query to be used
 	 * @param int $id The ID of the page the user is on
+	 *
 	 * @return void
 	 */
-	public function get_edit( $type, $id) {
+	public function get_edit( $type, $id ) {
 
 		global $wp_admin_bar, $wp_the_query;
 
-		if ( $type == 'post' && is_numeric( $id ) ) {
-			$wp_query = new WP_Query( array(
+		if ( ! is_numeric( $id ) ) {
+			// Just show the default lite version if $id is not valid
+			$this->get_lite(); // exits with output
+		} elseif ( $type == 'post' && is_numeric( $id ) ) {
+			$wp_the_query = new WP_Query( array(
 				'p'           => $id,
 				'post_status' => 'publish',
 			) );
-		}
+		} elseif ( $type == 'tag' ) {
+			$term = get_term( $id );
 
-		$wp_the_query = $wp_query;
+			if ( $term !== false ) {
+				$args         = array(
+					'taxonomy'       => $term->taxonomy,
+					'term'           => $term->slug,
+					'posts_per_page' => 1
+				);
+				$wp_the_query = new WP_Query( $args );
+			}
+
+		} elseif ( $type == 'page' ) {
+			$wp_the_query = new WP_Query( array(
+				'page_id'           => $id,
+			) );
+		}
 
 		// Loads a lighter version of the menu manually
 		wp_admin_bar_wp_menu( $wp_admin_bar );
 		wp_admin_bar_my_account_menu( $wp_admin_bar );
 		wp_admin_bar_site_menu( $wp_admin_bar );
-		wp_admin_bar_my_account_item ($wp_admin_bar );
+		wp_admin_bar_my_account_item( $wp_admin_bar );
 		wp_admin_bar_new_content_menu( $wp_admin_bar );
 		wp_admin_bar_edit_menu( $wp_admin_bar );
 		wp_admin_bar_add_secondary_groups( $wp_admin_bar );
@@ -199,16 +222,16 @@ class Ext_Admin_Menu {
 
 	}
 
-	// JSONP callback support
 	/**
 	 * JSONP callback support
 	 *
 	 * @param string $json_response the json encoded response string
+	 *
 	 * @return void
 	 */
 	private function jsonp( $json_response ) {
 
-		$callback = preg_replace("/[^a-zA-Z0-9]+/", "", $_GET['callback']); // alphanumeric only
+		$callback = preg_replace( "/[^a-zA-Z0-9]+/", "", $_GET['callback'] ); // alphanumeric only
 
 		// JSONP requires content type of application/javascript
 		$content_type = 'application/javascript';
