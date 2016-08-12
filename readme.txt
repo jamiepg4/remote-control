@@ -29,7 +29,7 @@ e.g.
 = 0.0.1 =
 * Initial commit of relatively functional plugin.
 
-= API Call Usage =
+== API Call Usage ==
 **Get Menu**
 ----
   <_Retrieves the html of either the full admin menu or a lite version._>
