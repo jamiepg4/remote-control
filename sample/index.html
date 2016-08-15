@@ -31,7 +31,7 @@
     };
 
     (function() {
-        var menuJSON = adminDomain + "/ext_admin_menu/lite/";
+        var menuJSON = adminDomain + "/clicker/lite/";
         $.ajax({
             url: menuJSON,
             dataType: "jsonp",
@@ -39,7 +39,7 @@
         })
             .done(function(data) {
                 window.pageChanged = function pageChanged() {
-                    var menuJSON = adminDomain + "/ext_admin_menu/edit/" + type + "/" + id + "/";
+                    var menuJSON = adminDomain + "/clicker/edit/" + type + "/" + id + "/";
                     $.ajax({
                         url: menuJSON,
                         dataType: "jsonp",
