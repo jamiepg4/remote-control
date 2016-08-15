@@ -9,7 +9,7 @@ module.exports = function( grunt ) {
 
 		addtextdomain: {
 			options: {
-				textdomain: 'ext-admin-menu',
+				textdomain: 'remote-control',
 			},
 			target: {
 				files: {
@@ -30,8 +30,8 @@ module.exports = function( grunt ) {
 			target: {
 				options: {
 					domainPath: '/languages',
-					mainFile: 'ext-admin-menu.php',
-					potFilename: 'ext-admin-menu.pot',
+					mainFile: 'remote-control.php',
+					potFilename: 'remote-control-menu.pot',
 					potHeaders: {
 						poedit: true,
 						'x-poedit-keywordslist': true

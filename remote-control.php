@@ -1,18 +1,18 @@
 <?php
 
 /**
- * Plugin Name:     External Admin Menu
- * Plugin URI:      https://github.com/ndevrinc/ext-admin-menu
+ * Plugin Name:     Remote Control
+ * Plugin URI:      https://github.com/ndevrinc/remote-control
  * Description:     Displays the top admin menu on non WordPress generated pages
  * Author:          Fusion Engineering
  * Author URI:      http://fusion.net
- * Text Domain:     ext-admin-menu
+ * Text Domain:     remote-control
  * Domain Path:     /languages
  * Version:         0.1.0
  *
- * @package         Ext_Admin_Menu
+ * @package         Remote_Control
  */
-class Ext_Admin_Menu {
+class Remote_Control {
 
 	private static $instance;
 
@@ -39,7 +39,7 @@ class Ext_Admin_Menu {
 
 	public static function get_instance() {
 		if ( ! isset( self::$instance ) ) {
-			self::$instance = new Ext_Admin_Menu();
+			self::$instance = new Remote_Control();
 			self::$instance->setup_actions();
 		}
 
@@ -56,11 +56,11 @@ class Ext_Admin_Menu {
 	 * Register the custom rewrite rules
 	 */
 	public function action_init_register_rewrites() {
-		add_rewrite_tag( '%extam_show%', '([^&]+)' );
-		add_rewrite_tag( '%extam_type%', '([^&]+)' );
-		add_rewrite_tag( '%extam_id%', '([^&]+)' );
-		add_rewrite_rule( 'ext_admin_menu/(full|lite)/?', 'index.php?extam_show=$matches[1]', 'top' );
-		add_rewrite_rule( 'ext_admin_menu/edit/(post|page|tag)/([0-9]+)/?', 'index.php?extam_show=edit&extam_type=$matches[1]&extam_id=$matches[2]', 'top' );
+		add_rewrite_tag( '%rc_show%', '([^&]+)' );
+		add_rewrite_tag( '%rc_type%', '([^&]+)' );
+		add_rewrite_tag( '%rc_id%', '([^&]+)' );
+		add_rewrite_rule( 'clicker/(full|lite)/?', 'index.php?rc_show=$matches[1]', 'top' );
+		add_rewrite_rule( 'clicker/edit/(post|page|tag)/([0-9]+)/?', 'index.php?rc_show=edit&rc_type=$matches[1]&rc_id=$matches[2]', 'top' );
 
 	}
 
@@ -78,7 +78,7 @@ class Ext_Admin_Menu {
 			$this->get_empty(); // exits without output
 		}
 
-		switch ( $wp_query->get( 'extam_show' ) ) {
+		switch ( $wp_query->get( 'rc_show' ) ) {
 			case 'empty':
 				$this->get_empty();
 				break;
@@ -89,7 +89,7 @@ class Ext_Admin_Menu {
 				$this->get_lite();
 				break;
 			case 'edit':
-				$this->get_edit( $wp_query->get( 'extam_type' ), $wp_query->get( 'extam_id' ) );
+				$this->get_edit( $wp_query->get( 'rc_type' ), $wp_query->get( 'rc_id' ) );
 				break;
 		}
 
@@ -247,4 +247,4 @@ class Ext_Admin_Menu {
 }
 
 // Registers the class on loading file
-Ext_Admin_Menu::get_instance();
+Remote_Control::get_instance();
