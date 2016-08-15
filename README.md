@@ -1,4 +1,4 @@
-# External Admin Menu #
+# Remote Control #
 **Contributors:** mdorman  
 **Tags:** rest,admin  
 **Requires at least:** 3.0.1  
@@ -20,7 +20,7 @@ This section describes how to install the plugin and get it working.
 
 e.g.
 
-1. Upload `ext-admin-menu` to the `/wp-content/plugins/` directory
+1. Upload `remote-control` to the `/wp-content/plugins/` directory
 2. Activate the plugin through the 'Plugins' menu in WordPress
 3. Add the necessary JavaScript / CSS / Markup to your front-end templates (see samples folder)
 
@@ -36,7 +36,7 @@ e.g.
 
 * **URL**
 
-  `ext_admin_menu/:extam_show`
+  `clicker/:rc_show`
 
 * **Method:**
 
@@ -48,9 +48,9 @@ e.g.
 
    **Required:**
 
-   `extam_show=[string]`
-   example: extam_show=full
-   example: extam_show=lite
+   `rc_show=[string]`
+   example: rc_show=full
+   example: rc_show=lite
 
 * **Success Response:**
 
@@ -76,7 +76,7 @@ e.g.
 
 * **URL**
 
-  `ext_admin_menu/edit/:extam_type/:extam_id`
+  `clicker/edit/:rc_type/:rc_id`
 
 * **Method:**
 
@@ -88,13 +88,13 @@ e.g.
 
    **Required:**
 
-   `extam_type=[string]`
-   example: extam_type=post
-   example: extam_type=page
-   example: extam_type=tag
+   `rc_type=[string]`
+   example: rc_type=post
+   example: rc_type=page
+   example: rc_type=tag
 
-   `extam_id=[integer]`
-   example: extam_id=4
+   `rc_id=[integer]`
+   example: rc_id=4
 
 * **Success Response:**
 
