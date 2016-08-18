@@ -19,11 +19,13 @@
     var adminDomain = getParameterByName('domain'); // Enter this for quick testing on a separate domain
     var type = getParameterByName('type');
     var id = getParameterByName('id');
+    var nonce = '';
 
     window.pageChanged = null;
 
     var jsonmenu = function jsonmenu(json) {
         if (window.pageChanged == null) {
+            nonce = json.nonce;
             $('body').prepend(json.html);
         } else {
             $('#wpadminwrapper').html(json.html);
@@ -37,7 +39,7 @@
         })
             .done(function(data) {
                 window.pageChanged = function pageChanged() {
-                    var menuJSON = adminDomain + "/wp-json/clicker/v1/edit/" + type + "/" + id + "/?_jsonp=jsonmenu";
+                    var menuJSON = adminDomain + "/wp-json/clicker/v1/edit/" + type + "/" + id + "/?_jsonp=jsonmenu&_wpnonce=" + nonce;
                     $.ajax({
                         url: menuJSON
                     });

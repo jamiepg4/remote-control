@@ -50,23 +50,19 @@ class Remote_Control {
 
 		add_action( 'rest_api_init', array( $this, 'register_api_hooks' ) );
 
-//		add_action( 'shutdown', function() {
-//			foreach( $GLOBALS['wp_actions'] as $action => $count ) {
-//				printf( '%s (%d) <br/>' . PHP_EOL, $action, $count );
-//			}
-//		});
 	}
 
 	public function register_api_hooks() {
 
 		$namespace = 'clicker/v1';
 
-		$uri = $_SERVER['REQUEST_URI'];
-		$pos = strpos( $uri, $namespace );
+		$uri      = $_SERVER['REQUEST_URI'];
+		$pos_lite = strpos( $uri, $namespace . '/lite' );
+		$pos_full = strpos( $uri, $namespace . '/full' );
 
 		// Need to allow for simple cookie authentication for this plugin's namespace only
 		// see: http://v2.wp-api.org/guide/authentication/
-		if ( $pos !== false ) {
+		if ( $pos_lite !== false || $pos_full !== false ) {
 			$nonce                = wp_create_nonce( 'wp_rest' );
 			$_REQUEST['_wpnonce'] = $nonce;
 		}
@@ -77,7 +73,7 @@ class Remote_Control {
 			require( ABSPATH . WPINC . '/class-wp-admin-bar.php' );
 		}
 
-		if ( $wp_admin_bar === null ) {
+		if ( $wp_admin_bar === NULL ) {
 			show_admin_bar( true );
 
 			/**
@@ -133,6 +129,8 @@ class Remote_Control {
 			return array( 'html' => '' );
 		}
 
+		$nonce = $_REQUEST['_wpnonce'];
+
 		ob_start();
 		wp_admin_bar_render();
 		$header = $this->get_css();
@@ -140,7 +138,12 @@ class Remote_Control {
 		$header .= ob_get_clean();
 		$header .= "</div>";
 
-		return array( 'html' => $header );
+		$return = array(
+			'html'  => $header,
+			'nonce' => $nonce
+		);
+
+		return $return;
 
 	}
 
@@ -157,6 +160,7 @@ class Remote_Control {
 		}
 
 		global $wp_admin_bar;
+		$nonce = $_REQUEST['_wpnonce'];
 
 		// Loads a lite version of the menu manually
 		wp_admin_bar_wp_menu( $wp_admin_bar );
@@ -174,7 +178,12 @@ class Remote_Control {
 		$header .= ob_get_clean();
 		$header .= "</div>";
 
-		return array( 'html' => $header );
+		$return = array(
+			'html'  => $header,
+			'nonce' => $nonce
+		);
+
+		return $return;
 
 	}
 
