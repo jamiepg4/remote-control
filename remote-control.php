@@ -47,52 +47,66 @@ class Remote_Control {
 	}
 
 	private function setup_actions() {
-		add_action( 'init', array( $this, 'action_init_register_rewrites' ) );
-		add_action( 'template_redirect', array( $this, 'action_template_redirect' ) );
+
+		add_action( 'rest_api_init', array( $this, 'register_api_hooks' ) );
 
 	}
 
-	/**
-	 * Register the custom rewrite rules
-	 */
-	public function action_init_register_rewrites() {
-		add_rewrite_tag( '%rc_show%', '([^&]+)' );
-		add_rewrite_tag( '%rc_type%', '([^&]+)' );
-		add_rewrite_tag( '%rc_id%', '([^&]+)' );
-		add_rewrite_rule( 'clicker/(full|lite)/?', 'index.php?rc_show=$matches[1]', 'top' );
-		add_rewrite_rule( 'clicker/edit/(post|page|tag)/([0-9]+)/?', 'index.php?rc_show=edit&rc_type=$matches[1]&rc_id=$matches[2]', 'top' );
+	public function register_api_hooks() {
 
-	}
+		$namespace = 'clicker/v1';
 
-	/**
-	 * Sends the requests to a specific function (controller)
-	 *
-	 * @return void
-	 */
-	public function action_template_redirect() {
+		$uri      = $_SERVER['REQUEST_URI'];
+		$pos_lite = strpos( $uri, $namespace . '/lite' );
+		$pos_full = strpos( $uri, $namespace . '/full' );
 
-		global $wp_query;
-
-		// Do not return a menu if user is not logged in
-		if ( ! is_user_logged_in() ) {
-			$this->get_empty(); // exits without output
+		// Need to allow for simple cookie authentication for this plugin's namespace only
+		// see: http://v2.wp-api.org/guide/authentication/
+		if ( $pos_lite !== false || $pos_full !== false ) {
+			$nonce                = wp_create_nonce( 'wp_rest' );
+			$_REQUEST['_wpnonce'] = $nonce;
 		}
 
-		switch ( $wp_query->get( 'rc_show' ) ) {
-			case 'empty':
-				$this->get_empty();
-				break;
-			case 'full':
-				$this->get_full();
-				break;
-			case 'lite':
-				$this->get_lite();
-				break;
-			case 'edit':
-				$this->get_edit( $wp_query->get( 'rc_type' ), $wp_query->get( 'rc_id' ) );
-				break;
+		global $wp_admin_bar;
+
+		if ( ! class_exists( 'WP_Admin_Bar' ) ) {
+			require( ABSPATH . WPINC . '/class-wp-admin-bar.php' );
 		}
 
+		if ( $wp_admin_bar === NULL ) {
+			show_admin_bar( true );
+
+			/**
+			 * Filter the admin bar class to instantiate.
+			 *
+			 * @since 3.1.0
+			 *
+			 * @param string $wp_admin_bar_class Admin bar class to use. Default 'WP_Admin_Bar'.
+			 */
+			$admin_bar_class = apply_filters( 'wp_admin_bar_class', 'WP_Admin_Bar' );
+			if ( class_exists( $admin_bar_class ) ) {
+				$wp_admin_bar = new $admin_bar_class;
+			} else {
+				return false;
+			}
+
+			$wp_admin_bar->initialize();
+			$wp_admin_bar->add_menus();
+		}
+
+		register_rest_route( $namespace, '/full', array(
+			'methods'  => 'GET',
+			'callback' => array( $this, 'get_full' ),
+		) );
+		register_rest_route( $namespace, '/lite', array(
+			'methods'  => 'GET',
+			'callback' => array( $this, 'get_lite' ),
+		) );
+
+		register_rest_route( $namespace, '/edit/(?P<type>[post|page|tag]+)/(?P<id>\d+)', array(
+			'methods'  => 'GET',
+			'callback' => array( $this, 'get_edit' ),
+		) );
 	}
 
 	private function get_css() {
@@ -106,20 +120,16 @@ class Remote_Control {
 	}
 
 	/**
-	 * Returns an empty html value for the admin menu
-	 */
-	public function get_empty() {
-
-		$json_response = json_encode( array( 'html' => '' ) );
-
-		$this->jsonp( $json_response ); // exits with output
-
-	}
-
-	/**
 	 * For displaying the full admin menu with all additional menu items based on user's role
 	 */
 	public function get_full() {
+
+		// Return empty html if user is not logged in
+		if ( ! is_user_logged_in() ) {
+			return array( 'html' => '' );
+		}
+
+		$nonce = $_REQUEST['_wpnonce'];
 
 		ob_start();
 		wp_admin_bar_render();
@@ -128,20 +138,29 @@ class Remote_Control {
 		$header .= ob_get_clean();
 		$header .= "</div>";
 
-		$json_response = json_encode( array( 'html' => $header ) );
+		$return = array(
+			'html'  => $header,
+			'nonce' => $nonce
+		);
 
-		$this->jsonp( $json_response ); // exits with output
+		return $return;
 
 	}
 
 	/**
 	 * Displays a reduced set of menu items
 	 *
-	 * @return void
+	 * @return string
 	 */
 	public function get_lite() {
 
+		// Return empty html if user is not logged in
+		if ( ! is_user_logged_in() ) {
+			return array( 'html' => '' );
+		}
+
 		global $wp_admin_bar;
+		$nonce = $_REQUEST['_wpnonce'];
 
 		// Loads a lite version of the menu manually
 		wp_admin_bar_wp_menu( $wp_admin_bar );
@@ -159,23 +178,33 @@ class Remote_Control {
 		$header .= ob_get_clean();
 		$header .= "</div>";
 
-		$json_response = json_encode( array( 'html' => $header ) );
+		$return = array(
+			'html'  => $header,
+			'nonce' => $nonce
+		);
 
-		$this->jsonp( $json_response ); // exits with output
+		return $return;
 
 	}
 
 	/**
 	 * Displays the lite version of the menu along with overridden edit links based on what is passed
 	 *
-	 * @param string $type The type of query to be used
-	 * @param int $id The ID of the page the user is on
+	 * @param WP_REST_Request $request Full data about the request.
 	 *
-	 * @return void
+	 * @return WP_Error|WP_REST_Response
 	 */
-	public function get_edit( $type, $id ) {
+	public function get_edit( $request ) {
+
+		// Return empty html if user is not logged in
+		if ( ! is_user_logged_in() ) {
+			return array( 'html' => '' );
+		}
 
 		global $wp_admin_bar, $wp_the_query;
+		$params = $request->get_params();
+		$type   = $params['type'];
+		$id     = $params['id'];
 
 		if ( ! is_numeric( $id ) ) {
 			// Just show the default lite version if $id is not valid
@@ -199,7 +228,7 @@ class Remote_Control {
 
 		} elseif ( $type == 'page' ) {
 			$wp_the_query = new WP_Query( array(
-				'page_id'           => $id,
+				'page_id' => $id,
 			) );
 		}
 
@@ -216,34 +245,10 @@ class Remote_Control {
 		$wp_admin_bar->render();
 		$header = ob_get_clean();
 
-		$json_response = json_encode( array( 'html' => $header ) );
-
-		$this->jsonp( $json_response ); // exits with output
+		return array( 'html' => $header );
 
 	}
 
-	/**
-	 * JSONP callback support
-	 *
-	 * @param string $json_response the json encoded response string
-	 *
-	 * @return void
-	 */
-	private function jsonp( $json_response ) {
-
-		$callback = preg_replace( "/[^a-zA-Z0-9]+/", "", $_GET['callback'] ); // alphanumeric only
-
-		// JSONP requires content type of application/javascript
-		$content_type = 'application/javascript';
-
-		// JSONP uses callback for response
-		$json_response = esc_js( $callback ) . '(' . $json_response . ')';
-
-		@header( 'Content-Type: ' . $content_type . '; charset=' . get_option( 'blog_charset' ) );
-		echo $json_response;
-
-		exit();
-	}
 }
 
 // Registers the class on loading file
